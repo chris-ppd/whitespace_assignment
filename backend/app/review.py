@@ -2,6 +2,7 @@ import difflib
 import json
 import os
 import sys
+import time
 
 import anthropic
 from dotenv import load_dotenv
@@ -227,3 +228,63 @@ def validate_review(review):
         if unknown:
             errors.append(f"tasks[{index}] depends on unknown id {sorted(unknown)[0]}")
     return errors
+
+
+def run_review(plan_text, client):
+    """Extract, validate and anchor, retrying with corrective feedback.
+
+    Problems accumulate across attempts so the final failure lists
+    everything the model got wrong, and each follow-up attempt sees them
+    in its prompt. The wall-clock guard stops before an attempt that
+    could not finish inside the contract's time budget.
+    """
+    started = time.monotonic()
+    seen_problems = []
+    for attempt in range(MAX_ATTEMPTS):
+        if time.monotonic() - started + REQUEST_TIMEOUT_S > TIME_BUDGET_S:
+            raise RuntimeError(
+                f"time budget exhausted before attempt {attempt + 1} of {MAX_ATTEMPTS}"
+            )
+        reply = review_plan(plan_text, client, "\n".join(seen_problems))
+        try:
+            review = extract_json(reply)
+            problems = validate_review(review)
+            if not problems:
+                problems = anchor_quotes(review, plan_text)
+        except ValueError as error:
+            review, problems = None, [str(error)]
+        if not problems:
+            return review
+        seen_problems.extend(problems)
+        if attempt + 1 < MAX_ATTEMPTS:
+            time.sleep(RETRY_BACKOFF_S)
+    raise RuntimeError(
+        f"review failed after {MAX_ATTEMPTS} attempts:\n" + "\n".join(seen_problems)
+    )
+
+
+def main(argv):
+    """CLI entry: 0 on a written review, 1 with a reason and no file otherwise."""
+    load_dotenv()
+    if len(argv) != 2:
+        print("Usage: ./review <plan.md> <out.json>", file=sys.stderr)
+        return 1
+    plan_path, out_path = argv
+    try:
+        with open(plan_path, encoding="utf-8") as source:
+            plan_text = source.read()
+    except OSError as error:
+        print(error, file=sys.stderr)
+        return 1
+    try:
+        review = run_review(plan_text, build_client())
+    except (RuntimeError, OSError) as error:
+        print(error, file=sys.stderr)
+        return 1
+    with open(out_path, "w", encoding="utf-8") as sink:
+        json.dump(review, sink, indent=2)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
