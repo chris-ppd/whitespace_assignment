@@ -8,9 +8,9 @@ A town council's events officer approves the plans that volunteer committees sen
 
 ## What you get
 
-A small app that reviews a plan in three steps: a model reads it and lists its tasks and findings, code schedules the tasks, and a page shows the result. It works, but it does everything badly.
+A small app that reviews a plan in three steps: a model reads it and lists its tasks and findings, code schedules the tasks, and a page shows the result. The model proposes and the code decides: every review is shape-checked, every quote is anchored to the plan by code, and an unusable answer fails loudly instead of being shown.
 
-The three sample plans are in `data/plans/`. The page shows their stored reviews from `data/reviews/`, so the app runs without an API key. The backend is FastAPI; the frontend is React with no styling.
+The three sample plans are in `data/plans/`. The page shows their stored reviews from `data/reviews/`, so the app runs without an API key. The backend is FastAPI; the frontend is a small React page styled to BRAND.md.
 
 ## Run it
 
@@ -39,12 +39,25 @@ cd backend && ../.venv/bin/uvicorn app.main:app --port 8000
 .venv/bin/pytest backend/tests
 ```
 
-To review a plan with a model, set `ANTHROPIC_API_KEY`, and optionally `REVIEW_MODEL`, then run:
+`make reviews` regenerates the three stored reviews with the model and re-checks each one against the contract (needs `OPENROUTER_API_KEY`, see below):
+
+```sh
+./review data/plans/harbour-run.md data/reviews/harbour-run.json
+python3 check_contract.py review data/reviews/harbour-run.json
+./review data/plans/lantern-festival.md data/reviews/lantern-festival.json
+python3 check_contract.py review data/reviews/lantern-festival.json
+./review data/plans/spring-market.md data/reviews/spring-market.json
+python3 check_contract.py review data/reviews/spring-market.json
+```
+
+To review a single plan by hand, set `OPENROUTER_API_KEY`, and optionally `REVIEW_MODEL`, then run:
 
 ```sh
 mkdir -p out
 ./review data/plans/spring-market.md out/spring-market.json
 ```
+
+The key comes from the environment or from a `.env` file in the repository root — copy `.env.example` to `.env` and fill it in. Without `REVIEW_MODEL` the command uses OpenRouter's free `nvidia/nemotron-3.5-super-vl:free`.
 
 The `Dockerfile` builds one container that serves the page and the API on `$PORT`, 8000 by default.
 
@@ -73,7 +86,7 @@ This checks the shape and the scheduling rules. It does not check quotes against
 ## Models and AI tools
 
 - Use any model with your own key, live from the app or offline. Your choice; tell us why in the note.
-- No key? OpenRouter has a free model you can use, also for AI features in the app: [nvidia/nemotron-3.5-super-vl:free](https://openrouter.ai/nvidia/nemotron-3.5-super-vl:free). A free OpenRouter account is enough. The starter calls Anthropic, so using it means switching the provider call.
+- The review command defaults to OpenRouter's free [nvidia/nemotron-3.5-super-vl:free](https://openrouter.ai/nvidia/nemotron-3.5-super-vl:free) through their Anthropic-compatible endpoint. `REVIEW_MODEL` points it at any other OpenRouter model with no code change.
 - Keep your review outputs for the three sample plans in `data/reviews/`, under the same file names. They are what your `./review` wrote, not edited by hand.
 - Name the environment variables your review command needs in the note. If we cannot run your model, we judge the AI part on your code and those outputs.
 - How the page uses AI is up to you. We judge it on whether it helps her decide.
