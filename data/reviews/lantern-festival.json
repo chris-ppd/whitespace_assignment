@@ -7,17 +7,17 @@
       "owner": "Ruth",
       "duration_days": 5,
       "depends_on": [],
-      "quote": "Agree the route and the site plan with the council"
+      "quote": "| Agree the route and the site plan with the council | Ruth | 5 days | - |"
     },
     {
       "id": "T2",
       "name": "Apply for the road closure",
       "owner": "Ruth",
-      "duration_days": 10,
+      "duration_days": 14,
       "depends_on": [
         "T1"
       ],
-      "quote": "Apply for the road closure"
+      "quote": "| Apply for the road closure | Ruth | about two weeks | Agree the route and the site plan with the council |"
     },
     {
       "id": "T3",
@@ -27,7 +27,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Arrange first aid cover"
+      "quote": "| Arrange first aid cover | Gareth | 4 days | Agree the route and the site plan with the council |"
     },
     {
       "id": "T4",
@@ -38,15 +38,17 @@
         "T1",
         "T3"
       ],
-      "quote": "Write the risk assessment"
+      "quote": "| Write the risk assessment | Ruth | 5 days | Agree the route and the site plan with the council |"
     },
     {
       "id": "T5",
       "name": "Arrange the event insurance",
       "owner": "Ruth",
       "duration_days": 3,
-      "depends_on": [],
-      "quote": "Arrange the event insurance"
+      "depends_on": [
+        "T4"
+      ],
+      "quote": "| Arrange the event insurance | Ruth | 3 days | - |"
     },
     {
       "id": "T6",
@@ -54,7 +56,7 @@
       "owner": "Ruth",
       "duration_days": 5,
       "depends_on": [],
-      "quote": "Book the Silver Band and the samba band"
+      "quote": "| Book the Silver Band and the samba band | Ruth | 5 days | - |"
     },
     {
       "id": "T7",
@@ -64,7 +66,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Book the food stalls"
+      "quote": "| Book the food stalls | Ruth | 1 week | Agree the route and the site plan with the council |"
     },
     {
       "id": "T8",
@@ -74,7 +76,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Hire the toilets and the crowd barriers"
+      "quote": "| Hire the toilets and the crowd barriers | Gareth | 3 days | Agree the route and the site plan with the council |"
     },
     {
       "id": "T9",
@@ -84,7 +86,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Arrange extra bins and a litter-pick team for the night"
+      "quote": "| Arrange extra bins and a litter-pick team for the night | tbc | 2 days | Agree the route and the site plan with the council |"
     },
     {
       "id": "T10",
@@ -94,7 +96,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Recruit stewards"
+      "quote": "| Recruit stewards | Ruth | 1 week | Agree the route and the site plan with the council |"
     },
     {
       "id": "T11",
@@ -105,7 +107,7 @@
         "T10",
         "T4"
       ],
-      "quote": "Brief the stewards"
+      "quote": "| Brief the stewards | Ruth | 3 days | Recruit stewards, Write the risk assessment |"
     },
     {
       "id": "T12",
@@ -115,7 +117,7 @@
       "depends_on": [
         "T10"
       ],
-      "quote": "Draw up the volunteer rota"
+      "quote": "| Draw up the volunteer rota | Hannah | 3 days | Recruit stewards |"
     },
     {
       "id": "T13",
@@ -123,7 +125,7 @@
       "owner": "Hannah",
       "duration_days": 14,
       "depends_on": [],
-      "quote": "Raise sponsorship from local businesses"
+      "quote": "| Raise sponsorship from local businesses | Hannah | 2 weeks | - |"
     },
     {
       "id": "T14",
@@ -133,7 +135,7 @@
       "depends_on": [
         "T13"
       ],
-      "quote": "Order the lantern-making materials"
+      "quote": "| Order the lantern-making materials | Priya | 1 week | Raise sponsorship from local businesses |"
     },
     {
       "id": "T15",
@@ -143,7 +145,7 @@
       "depends_on": [
         "T14"
       ],
-      "quote": "Run lantern-making workshops in both of the schools"
+      "quote": "| Run the lantern-making workshops in both schools | Priya | 15 days | Order the lantern-making materials |"
     },
     {
       "id": "T16",
@@ -153,7 +155,7 @@
       "depends_on": [
         "T6"
       ],
-      "quote": "Design the poster and flyer"
+      "quote": "| Design the poster and flyer | Tom | 5 days | Book the Silver Band and the samba band |"
     },
     {
       "id": "T17",
@@ -164,7 +166,7 @@
         "T16",
         "T2"
       ],
-      "quote": "Print the posters and flyers"
+      "quote": "| Print the posters and flyers | Tom | 4 days | Design the poster and flyer |"
     },
     {
       "id": "T18",
@@ -174,11 +176,11 @@
       "depends_on": [
         "T17"
       ],
-      "quote": "Put up the posters and deliver the flyers"
+      "quote": "| Put up the posters and deliver the flyers | Tom | 6 days | Print the posters and flyers |"
     },
     {
       "id": "T19",
-      "name": "Hire the stage lighting and PA",
+      "name": "Arrange hire of the stage lighting and PA system",
       "owner": "Ruth",
       "duration_days": 3,
       "depends_on": [
@@ -188,7 +190,7 @@
     },
     {
       "id": "T20",
-      "name": "Collect and store the finished lanterns",
+      "name": "Collect and store finished lanterns",
       "owner": "Priya",
       "duration_days": 2,
       "depends_on": [
@@ -204,11 +206,11 @@
       "depends_on": [
         "T13"
       ],
-      "quote": "Gareth will build the frame for the finale in his garage, so it only needs putting up on the green on the evening."
+      "quote": "He can start as soon as the sponsorship money is in to buy the timber, and it takes him eight days."
     },
     {
       "id": "T22",
-      "name": "Write the press release and social media posts",
+      "name": "Write press release and set up social media posts",
       "owner": "Tom",
       "duration_days": 3,
       "depends_on": [
@@ -219,9 +221,22 @@
   ],
   "findings": [
     {
-      "title": "One task has no owner",
-      "detail": "The task to arrange extra bins and a litter-pick team for the night is marked tbc, so nobody is responsible for it and it may not get done.",
-      "quote": "Arrange extra bins and a litter-pick team for the night"
+      "title": "Missing owner for bin and litter-pick task",
+      "detail": "'Arrange extra bins and a litter-pick team for the night' lists the owner as 'tbc', so no person is assigned to a task needed on the night.",
+      "severity": "medium",
+      "quote": "| Arrange extra bins and a litter-pick team for the night | tbc | 2 days | Agree the route and the site plan with the council |"
+    },
+    {
+      "title": "Dependencies stated only in prose are missing from the table",
+      "detail": "The table's 'Needs first' column omits dependencies given in the prose, e.g. the risk assessment waits for first-aid cover and the event insurance waits for the finished risk assessment.",
+      "severity": "medium",
+      "quote": "Last year they would not give us a quote until they had seen the finished risk assessment, so Ruth will do the insurance after that."
+    },
+    {
+      "title": "Printing depends on road-closure approval which is not a planned task",
+      "detail": "Posters cannot be printed until the road closure is approved, but the plan only schedules 'Apply for the road closure'; council approval itself is not a task.",
+      "severity": "medium",
+      "quote": "The printers cannot have the poster until the road closure has been approved, because the poster has the route map and the closure times on it."
     }
   ]
 }

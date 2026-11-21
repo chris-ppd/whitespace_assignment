@@ -1,5 +1,5 @@
 {
-  "deadline_day": 99,
+  "deadline_day": null,
   "tasks": [
     {
       "id": "T1",
@@ -7,7 +7,7 @@
       "owner": "Dan",
       "duration_days": 3,
       "depends_on": [],
-      "quote": "Measure and map the course"
+      "quote": "| Measure and map the course | Dan | 3 days | - |"
     },
     {
       "id": "T2",
@@ -18,17 +18,15 @@
         "T1",
         "T3"
       ],
-      "quote": "Get the course approved by the council"
+      "quote": "| Get the course approved by the council | Dan | 1 week | Measure and map the course, Take out the event insurance |"
     },
     {
       "id": "T3",
       "name": "Take out the event insurance",
       "owner": "Kerry",
       "duration_days": 3,
-      "depends_on": [
-        "T2"
-      ],
-      "quote": "Take out the event insurance"
+      "depends_on": [],
+      "quote": "| Take out the event insurance | Kerry | 3 days | - |"
     },
     {
       "id": "T4",
@@ -36,7 +34,7 @@
       "owner": "Sam",
       "duration_days": 2,
       "depends_on": [],
-      "quote": "Set up online entries"
+      "quote": "| Set up online entries | Sam | 2 days | - |"
     },
     {
       "id": "T5",
@@ -46,7 +44,7 @@
       "depends_on": [
         "T4"
       ],
-      "quote": "Order race numbers and timing chips"
+      "quote": "| Order race numbers and timing chips | Sam | 10 days | Set up online entries |"
     },
     {
       "id": "T6",
@@ -54,7 +52,7 @@
       "owner": "Lucy",
       "duration_days": 14,
       "depends_on": [],
-      "quote": "Order medals and T-shirts"
+      "quote": "| Order medals and T-shirts | Lucy | 2 weeks | - |"
     },
     {
       "id": "T7",
@@ -64,7 +62,7 @@
       "depends_on": [
         "T2"
       ],
-      "quote": "Recruit marshals"
+      "quote": "| Recruit marshals | Lucy | 1 week | Get the course approved by the council |"
     },
     {
       "id": "T8",
@@ -74,7 +72,7 @@
       "depends_on": [
         "T7"
       ],
-      "quote": "Brief the marshals"
+      "quote": "| Brief the marshals | Dan | 2 days | Recruit marshals |"
     },
     {
       "id": "T9",
@@ -84,7 +82,7 @@
       "depends_on": [
         "T2"
       ],
-      "quote": "Book first aid cover"
+      "quote": "| Book first aid cover | Kerry | 3 days | Get the course approved by the council |"
     },
     {
       "id": "T10",
@@ -94,7 +92,7 @@
       "depends_on": [
         "T1"
       ],
-      "quote": "Organise the water stations"
+      "quote": "| Organise the water stations | Sam | 4 days | Measure and map the course |"
     },
     {
       "id": "T11",
@@ -104,7 +102,7 @@
       "depends_on": [
         "T4"
       ],
-      "quote": "Put out posters and the club newsletter"
+      "quote": "| Put out posters and the club newsletter | Kerry | 5 days | Set up online entries |"
     },
     {
       "id": "T12",
@@ -114,8 +112,21 @@
       "depends_on": [
         "T6"
       ],
-      "quote": "Pack the goody bags and get the finish kit ready"
+      "quote": "| Pack the goody bags and get the finish kit ready | Lucy | 3 days | Order medals and T-shirts |"
     }
   ],
-  "findings": []
+  "findings": [
+    {
+      "title": "Contradictory dependency direction between table and prose",
+      "detail": "The table states course approval waits for insurance, but the prose states insurance is taken out once the council has approved the course, creating a circular dependency.",
+      "severity": "high",
+      "quote": null
+    },
+    {
+      "title": "Contradictory deadlines stated",
+      "detail": "The run is stated as 30 days after kickoff, the table states tasks must be done five weeks after kickoff, and the notes say to record the deadline as day 99.",
+      "severity": "high",
+      "quote": null
+    }
+  ]
 }
