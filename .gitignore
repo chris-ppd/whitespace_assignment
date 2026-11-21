@@ -11,6 +11,7 @@ frontend/dist/
 # Secrets & environment
 .env
 .env.*
+!.env.example
 
 # Editor / OS noise
 .vscode/
