@@ -1,9 +1,21 @@
-.venv/
-node_modules/
-dist/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 .pytest_cache/
-out/
+.venv/
+
+# Node / frontend build output
+node_modules/
+frontend/dist/
+
+# Secrets & environment
 .env
+.env.*
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+
+# Planning notes (not part of the app)
 prompt_details/
