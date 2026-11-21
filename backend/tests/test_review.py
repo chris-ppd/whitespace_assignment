@@ -194,3 +194,128 @@ def test_extra_severity_field_is_ignored():
     review = example_review()
     review["findings"].append({"title": "T", "detail": "D", "severity": "high", "quote": None})
     assert collect(review) == []
+
+
+def test_collapse_runs_whitespace_to_single_spaces():
+    assert review_module._collapse("a\n  b\tc") == "a b c"
+
+
+PLAN = """# Fair
+
+Opening line for the pair span.
+
+| Task | Who | Days |
+|---|---|---|
+| Book the hall | Ann | 3 |
+
+Closing line.
+"""
+
+
+def anchored(review):
+    problems = review_module.anchor_quotes(review, PLAN)
+    return review, problems
+
+
+def test_exact_quote_is_untouched():
+    review = {"deadline_day": None, "tasks": [], "findings": [
+        {"title": "T", "detail": "D", "quote": "| Book the hall | Ann | 3 |"}
+    ]}
+    review, problems = anchored(review)
+    assert problems == []
+    assert review["findings"][0]["quote"] == "| Book the hall | Ann | 3 |"
+
+
+def test_cross_line_span_the_model_copied_faithfully_passes():
+    review = {"deadline_day": None, "tasks": [], "findings": [
+        {"title": "T", "detail": "D", "quote": "Opening line for the pair span. Closing line."}
+    ]}
+    review, problems = anchored(review)
+    # Not adjacent lines, so this is a plain substring miss; the repair
+    # window cannot produce it and a finding quote degrades honestly to null.
+    assert review["findings"][0]["quote"] is None
+
+
+def test_whitespace_drift_passes_the_contract_fast_path_untouched():
+    # Whitespace runs collapse to one space by contract law, so any pure
+    # spacing drift is already a legal quote; repair must not touch it.
+    review = {"deadline_day": None, "tasks": [], "findings": []}
+    review["tasks"] = [{
+        "id": "T1", "name": "Book the hall", "owner": "Ann",
+        "duration_days": 3, "depends_on": [],
+        "quote": "Book  the   hall",
+    }]
+    review, problems = anchored(review)
+    assert problems == []
+    assert review["tasks"][0]["quote"] == "Book  the   hall"
+
+
+def test_case_drift_on_one_character_is_repaired_to_true_case():
+    review = {"deadline_day": None, "tasks": [], "findings": []}
+    review["tasks"] = [{
+        "id": "T1", "name": "Book the hall", "owner": "Ann",
+        "duration_days": 3, "depends_on": [],
+        "quote": "| Book the Hall | Ann | 3 |",  # hall -> Hall
+    }]
+    review, problems = anchored(review)
+    assert problems == []
+    assert review["tasks"][0]["quote"] == "| Book the hall | Ann | 3 |"
+
+
+def test_small_paraphrase_is_repaired_when_close_enough():
+    review = {"deadline_day": None, "tasks": [], "findings": []}
+    review["tasks"] = [{
+        "id": "T1", "name": "Book the hall", "owner": "Ann",
+        "duration_days": 3, "depends_on": [],
+        "quote": "Opening line for the pair span!",  # period -> exclamation
+    }]
+    review, problems = anchored(review)
+    assert problems == []
+    assert review["tasks"][0]["quote"] == "Opening line for the pair span."
+
+
+def test_wholesale_case_conversion_fails_loudly_at_threshold():
+    review = {"deadline_day": None, "tasks": [], "findings": []}
+    review["tasks"] = [{
+        "id": "T1", "name": "Book the hall", "owner": "Ann",
+        "duration_days": 3, "depends_on": [],
+        "quote": "book the hall | ann | 3 |",  # ratio 0.885 < 0.9
+    }]
+    review, problems = anchored(review)
+    assert len(problems) == 1
+
+
+def test_hallucinated_finding_quote_becomes_null():
+    review = {"deadline_day": None, "tasks": [], "findings": [
+        {"title": "T", "detail": "D", "quote": "No such line exists anywhere here."}
+    ]}
+    review, problems = anchored(review)
+    assert problems == []
+    assert review["findings"][0]["quote"] is None
+
+
+def test_hallucinated_task_quote_is_a_problem():
+    review = {"deadline_day": None, "tasks": [], "findings": []}
+    review["tasks"] = [{
+        "id": "T1", "name": "Book the hall", "owner": "Ann",
+        "duration_days": 3, "depends_on": [],
+        "quote": "No such line exists anywhere here.",
+    }]
+    review, problems = anchored(review)
+    assert len(problems) == 1
+    assert "T1" in problems[0] or "tasks[0]" in problems[0]
+
+
+def test_exact_table_row_quote_keeps_pipes_intact():
+    review = {"deadline_day": row_quote()}
+    review["tasks"] = [{
+        "id": "T1", "name": "Book the hall", "owner": "Ann",
+        "duration_days": 3, "depends_on": [], "quote": row_quote(),
+    }]
+    review, problems = anchored(review)
+    assert problems == []
+    assert review["tasks"][0]["quote"] == "| Book the hall | Ann | 3 |"
+
+
+def row_quote():
+    return "| Book the hall | Ann | 3 |"

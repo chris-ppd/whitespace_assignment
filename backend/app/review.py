@@ -1,3 +1,4 @@
+import difflib
 import json
 import os
 import sys
@@ -78,6 +79,64 @@ def extract_json(reply_text):
         return json.loads(text[start:end + 1])
     except json.JSONDecodeError as error:
         raise ValueError(f"model reply is not valid JSON: {error}") from error
+
+
+def _collapse(text):
+    """The contract's own normalization: every whitespace run to one space."""
+    return " ".join(text.split())
+
+
+def _candidates(plan_text):
+    """Quote candidates: single stripped lines, plus adjacent-line pairs.
+
+    The line is the contract's natural atom — a quote may cross a line
+    break but never a table row, because the markdown pipe is not
+    whitespace. No sentence tokenizer, no wider windows.
+    """
+    lines = [line.strip() for line in plan_text.splitlines()]
+    singles = [line for line in lines if line]
+    pairs = [
+        f"{lines[i]} {lines[i + 1]}"
+        for i in range(len(lines) - 1)
+        if lines[i] and lines[i + 1]
+    ]
+    return singles + pairs
+
+
+def anchor_quotes(review, plan_text):
+    """Ground every non-null quote in the plan, in place; return problems left.
+
+    Threshold asymmetry: set too high, honest quotes fail loudly into the
+    retry ladder; set too low, a WRONG line gets anchored silently and the
+    officer quotes something the committee never wrote. Never lower it
+    without a failing example in hand.
+    """
+    collapsed_plan = _collapse(plan_text)
+    candidates = _candidates(plan_text)
+    problems = []
+    for collection in ("tasks", "findings"):
+        for index, item in enumerate(review.get(collection, [])):
+            quote = item.get("quote")
+            if quote is None:
+                continue
+            if _collapse(quote) in collapsed_plan:
+                continue
+            best, best_ratio = None, 0.0
+            for candidate in candidates:
+                ratio = difflib.SequenceMatcher(
+                    None, _collapse(quote), _collapse(candidate)
+                ).ratio()
+                if ratio > best_ratio:
+                    best, best_ratio = candidate, ratio
+            if best is not None and best_ratio >= ANCHOR_THRESHOLD:
+                item["quote"] = best
+            elif collection == "findings":
+                item["quote"] = None
+            else:
+                problems.append(
+                    f"tasks[{index}] quote does not match any line of the plan"
+                )
+    return problems
 
 
 def validate_review(review):
