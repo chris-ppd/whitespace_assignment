@@ -162,3 +162,23 @@ def test_empty_list_response_totals():
     assert response["end_day"] == 0
     assert response["meets_deadline"] is True
     assert response["days_late"] == 0
+
+
+def test_schedule_orchestrator_reports_cycles():
+    tasks = [task("A", 1, ["B"]), task("B", 1, ["A"])]
+    response = schedule(tasks, 10)
+    assert response["status"] == "cycle"
+    assert validate_schedule_response({"tasks": tasks, "deadline_day": 10}, response) == []
+
+
+def test_schedule_orchestrator_with_null_deadline():
+    response = schedule([task("A", 3)], None)
+    assert response["end_day"] == 3
+    assert response["meets_deadline"] is None
+    assert response["days_late"] is None
+
+
+def test_schedule_with_negative_deadline():
+    response = schedule([task("A", 3)], -5)
+    assert response["meets_deadline"] is False
+    assert response["days_late"] == 8

@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 
 from .scheduler import schedule
+from .validate import validate_request
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data"
@@ -36,6 +37,9 @@ def get_plan(plan_id: str):
 
 @app.post("/api/schedule")
 def post_schedule(body: dict):
+    errors = validate_request(body)
+    if errors:
+        raise HTTPException(422, errors)
     return schedule(body["tasks"], body["deadline_day"])
 
 

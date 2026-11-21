@@ -114,24 +114,21 @@ def find_cycle(tasks):
 
 
 def schedule(tasks, deadline_day):
-    by_id = {t["id"]: t for t in tasks}
+    """Route, solve and respond — the engine both endpoints call.
 
-    def end_of(task):
-        start = max([end_of(by_id[d]) for d in task["depends_on"]], default=0)
-        return start + task["duration_days"]
-
-    items = []
-    for t in tasks:
-        end = end_of(t)
-        items.append({"id": t["id"], "start_day": end - t["duration_days"], "end_day": end})
-
-    end_day = max([i["end_day"] for i in items], default=0)
-    return {
-        "status": "scheduled",
-        "schedule": items,
-        "end_day": end_day,
-        "deadline_day": deadline_day,
-        "meets_deadline": end_day <= deadline_day,
-        "days_late": max(0, end_day - deadline_day),
-        "cycle": [],
-    }
+    Acyclic input returns the earliest-finish schedule; a dependency loop
+    returns the cycle answer instead, which the contract also delivers with
+    HTTP 200.
+    """
+    cycle = find_cycle(tasks)
+    if cycle:
+        return {
+            "status": "cycle",
+            "schedule": [],
+            "end_day": None,
+            "deadline_day": deadline_day,
+            "meets_deadline": None,
+            "days_late": None,
+            "cycle": cycle,
+        }
+    return build_scheduled_response(tasks, deadline_day, solve(tasks))
