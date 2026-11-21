@@ -57,6 +57,25 @@ def solve(tasks):
     return entries
 
 
+def build_scheduled_response(tasks, deadline_day, entries):
+    """Assemble the seven contract fields from solved entries.
+
+    deadline_day is None only on the GET path, where stored reviews may not
+    state one; the verdict fields are then null instead of a TypeError from
+    comparing against None.
+    """
+    end_day = max((entry["end_day"] for entry in entries), default=0)
+    return {
+        "status": "scheduled",
+        "schedule": entries,
+        "end_day": int(end_day),
+        "deadline_day": deadline_day,
+        "meets_deadline": None if deadline_day is None else end_day <= deadline_day,
+        "days_late": None if deadline_day is None else max(0, end_day - deadline_day),
+        "cycle": [],
+    }
+
+
 def find_cycle(tasks):
     """Return the ids of one real dependency loop, in loop order, or None.
 

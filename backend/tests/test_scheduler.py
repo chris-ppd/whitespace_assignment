@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from check_contract import validate_schedule_response  # noqa: E402
 
-from app.scheduler import find_cycle, schedule, solve  # noqa: E402
+from app.scheduler import build_scheduled_response, find_cycle, schedule, solve  # noqa: E402
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 
@@ -38,16 +38,7 @@ def assert_cycle_ok(tasks, deadline_day=10):
 
 
 def scheduled_response(tasks, deadline_day, entries):
-    end_day = max((entry["end_day"] for entry in entries), default=0)
-    return {
-        "status": "scheduled",
-        "schedule": entries,
-        "end_day": end_day,
-        "deadline_day": deadline_day,
-        "meets_deadline": end_day <= deadline_day,
-        "days_late": max(0, end_day - deadline_day),
-        "cycle": [],
-    }
+    return build_scheduled_response(tasks, deadline_day, entries)
 
 
 def assert_solve_ok(tasks, deadline_day=10, end_day=None):
@@ -151,3 +142,23 @@ def test_touching_intervals_are_legal():
     entries = assert_solve_ok(tasks, end_day=5)
     by_id = {entry["id"]: entry for entry in entries}
     assert by_id["B"]["start_day"] == by_id["A"]["end_day"]
+
+
+def test_null_deadline_gives_null_verdicts():
+    response = build_scheduled_response([task("A", 3)], None, solve([task("A", 3)]))
+    assert response["end_day"] == 3
+    assert response["meets_deadline"] is None
+    assert response["days_late"] is None
+
+
+def test_negative_deadline_counts_days_late():
+    response = build_scheduled_response([task("A", 3)], -5, solve([task("A", 3)]))
+    assert response["meets_deadline"] is False
+    assert response["days_late"] == 8
+
+
+def test_empty_list_response_totals():
+    response = build_scheduled_response([], 0, [])
+    assert response["end_day"] == 0
+    assert response["meets_deadline"] is True
+    assert response["days_late"] == 0
