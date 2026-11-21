@@ -61,3 +61,110 @@ def review_plan(text, client=None, corrective=""):
         messages=[{"role": "user", "content": prompt}],
     )
     return "".join(block.text for block in reply.content if block.type == "text")
+
+
+def extract_json(reply_text):
+    """Parse the JSON object out of a model reply, tolerating fences and prose."""
+    text = reply_text.strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end <= start:
+        raise ValueError("model reply contains no JSON object")
+    try:
+        return json.loads(text[start:end + 1])
+    except json.JSONDecodeError as error:
+        raise ValueError(f"model reply is not valid JSON: {error}") from error
+
+
+def validate_review(review):
+    """Return every problem with a model review; [] when it is usable.
+
+    Mirrors the checker's validate_review_shape semantics with strict
+    typing (bools and numeric strings are not integers) and collects all
+    errors at once, so one corrective retry sees every problem. Extra
+    fields such as severity are never rejected. Cycles are not an error
+    here; the downstream scheduler answers them.
+    """
+    if not isinstance(review, dict):
+        return ["review must be an object"]
+
+    errors = []
+    if "deadline_day" not in review:
+        errors.append("missing deadline_day")
+    elif review["deadline_day"] is not None and type(review["deadline_day"]) is not int:
+        errors.append("deadline_day must be an integer or null")
+
+    task_ids = set()
+    tasks = review.get("tasks")
+    if "tasks" not in review:
+        errors.append("missing tasks")
+    elif not isinstance(tasks, list):
+        errors.append("tasks must be a list")
+    else:
+        seen_ids = set()
+        for index, task in enumerate(tasks):
+            prefix = f"tasks[{index}]"
+            if not isinstance(task, dict):
+                errors.append(f"{prefix} must be an object")
+                continue
+            for field in ("id", "name", "owner", "duration_days", "depends_on", "quote"):
+                if field not in task:
+                    errors.append(f"{prefix} missing {field}")
+            task_id = task.get("id")
+            if "id" in task and not isinstance(task_id, str):
+                errors.append(f"{prefix} id must be a string")
+            elif isinstance(task_id, str):
+                if task_id in seen_ids:
+                    errors.append(f"{prefix} duplicate id {task_id}")
+                seen_ids.add(task_id)
+                task_ids.add(task_id)
+            if "name" in task and not isinstance(task["name"], str):
+                errors.append(f"{prefix} name must be a string")
+            if "owner" in task and task["owner"] is not None and not isinstance(task["owner"], str):
+                errors.append(f"{prefix} owner must be a string or null")
+            duration = task.get("duration_days")
+            if "duration_days" in task and (type(duration) is not int or duration < 1):
+                errors.append(f"{prefix} duration_days must be an integer of at least 1")
+            depends_on = task.get("depends_on")
+            if "depends_on" in task and (
+                not isinstance(depends_on, list) or any(not isinstance(d, str) for d in depends_on)
+            ):
+                errors.append(f"{prefix} depends_on must be a list of ids")
+            if "quote" in task and not isinstance(task["quote"], str):
+                errors.append(f"{prefix} quote must be a string")
+
+    findings = review.get("findings")
+    if "findings" not in review:
+        errors.append("missing findings")
+    elif not isinstance(findings, list):
+        errors.append("findings must be a list")
+    else:
+        for index, finding in enumerate(findings):
+            prefix = f"findings[{index}]"
+            if not isinstance(finding, dict):
+                errors.append(f"{prefix} must be an object")
+                continue
+            for field in ("title", "detail"):
+                if field not in finding:
+                    errors.append(f"{prefix} missing {field}")
+                elif not isinstance(finding[field], str):
+                    errors.append(f"{prefix} {field} must be a string")
+            if "quote" in finding and finding["quote"] is not None and not isinstance(finding["quote"], str):
+                errors.append(f"{prefix} quote must be a string or null")
+
+    if not isinstance(tasks, list):
+        return errors
+    for index, task in enumerate(tasks):
+        if not isinstance(task, dict):
+            continue
+        depends_on = task.get("depends_on")
+        if not isinstance(depends_on, list):
+            continue
+        unknown = set(depends_on) - task_ids
+        if unknown:
+            errors.append(f"tasks[{index}] depends on unknown id {sorted(unknown)[0]}")
+    return errors
