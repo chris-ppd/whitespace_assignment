@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -5,7 +6,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from check_contract import validate_schedule_response  # noqa: E402
 
-from app.scheduler import find_cycle, schedule  # noqa: E402
+from app.scheduler import find_cycle, schedule, solve  # noqa: E402
+
+EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 
 
 def task(id, duration_days, depends_on=()):
@@ -32,6 +35,30 @@ def assert_cycle_ok(tasks, deadline_day=10):
     )
     assert errors == []
     return cycle
+
+
+def scheduled_response(tasks, deadline_day, entries):
+    end_day = max((entry["end_day"] for entry in entries), default=0)
+    return {
+        "status": "scheduled",
+        "schedule": entries,
+        "end_day": end_day,
+        "deadline_day": deadline_day,
+        "meets_deadline": end_day <= deadline_day,
+        "days_late": max(0, end_day - deadline_day),
+        "cycle": [],
+    }
+
+
+def assert_solve_ok(tasks, deadline_day=10, end_day=None):
+    entries = solve(tasks)
+    errors = validate_schedule_response(
+        {"tasks": tasks, "deadline_day": deadline_day}, scheduled_response(tasks, deadline_day, entries)
+    )
+    assert errors == []
+    if end_day is not None:
+        assert max((entry["end_day"] for entry in entries), default=0) == end_day
+    return entries
 
 
 def test_single_task_ends_after_its_duration():
@@ -87,3 +114,40 @@ def test_tail_leading_into_a_loop_reports_only_the_loop():
     ]
     cycle = assert_cycle_ok(tasks)
     assert set(cycle) == {"A", "B"}
+
+
+def owned(id, owner, duration_days, depends_on=()):
+    entry = task(id, duration_days, depends_on)
+    entry["owner"] = owner
+    return entry
+
+
+def test_same_owner_tasks_cannot_run_in_parallel():
+    tasks = [owned("A", "Ann", 3), owned("B", "Ann", 2)]
+    assert_solve_ok(tasks, end_day=5)
+
+
+def test_contract_example_ends_at_day_nine():
+    request = json.loads((EXAMPLES / "schedule-request.json").read_text())
+    assert_solve_ok(request["tasks"], request["deadline_day"], end_day=9)
+
+
+def test_unowned_tasks_all_run_in_parallel():
+    tasks = [task(f"T{i}", 1) for i in range(5)]
+    assert_solve_ok(tasks, end_day=1)
+
+
+def test_empty_task_list_solves_to_nothing():
+    assert solve([]) == []
+
+
+def test_single_task_ends_after_its_duration():
+    entries = assert_solve_ok([task("A", 3)], end_day=3)
+    assert entries == [{"id": "A", "start_day": 0, "end_day": 3}]
+
+
+def test_touching_intervals_are_legal():
+    tasks = [owned("A", "Ann", 3), owned("B", "Ann", 2)]
+    entries = assert_solve_ok(tasks, end_day=5)
+    by_id = {entry["id"]: entry for entry in entries}
+    assert by_id["B"]["start_day"] == by_id["A"]["end_day"]
